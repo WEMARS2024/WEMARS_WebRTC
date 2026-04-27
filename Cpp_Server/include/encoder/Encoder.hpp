@@ -29,6 +29,7 @@ private:
     const int width_;
     const int height_;
     const int fps_;
+    int64_t pts_counter_;
 
     AVCodecContext* ctx_ = nullptr;
     AVFrame* frame_ = nullptr;

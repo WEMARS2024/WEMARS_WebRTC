@@ -6,14 +6,27 @@ function App() {
   const webSocketIp = "ws://127.0.0.1:5000";
   
   // set useState's
-  const [serverResponse, setServerResponse] = useState('')
+  const [serverResponse, setServerResponse] = useState('');
   const [remoteStreams, setRemoteStreams] = useState([]);
-
+  const [wsState, setWsState] = useState("Closed");
+  const [pcState, setPcState] = useState("Closed");
   // set useRef's
   const socketRef = useRef(null);
   const pcRef = useRef(null);
   const peerConnectionRef = useRef("Closed");
   const webSocketRef = useRef("Closed");
+
+  // === Setter Functions ===
+
+  const setWs = (val) => {
+    setWsState(val);
+    webSocketRef.current = val;
+  }
+
+  const setPc = (val) => {
+    setPcState(val);
+    peerConnectionRef.current = val;
+  }
 
 
   // === WEBSOCKET CALLBACKS === 
@@ -44,7 +57,7 @@ function App() {
 
   const onClose = (event) => {
     setServerResponse('');
-    webSocketRef.current = 'Closed';
+    setWs("Closed");
   }
 
   // === PEER CONNECTION CALLBACKS === 
@@ -118,6 +131,7 @@ function App() {
     }
   }
 
+  // Not usable as of now.
   const sendPing = () => {
 
     console.log("Sending Ping to Server")
@@ -167,7 +181,7 @@ function App() {
       //  pcRef.current.addTransceiver('video', { direction: 'recvonly' });
       //}
 
-      peerConnectionRef.current = "Open";
+      setPc("Open")
       initPC();
 
     }
@@ -184,7 +198,7 @@ function App() {
       pcRef.current?.close();
       pcRef.current = null;
 
-      peerConnectionRef.current = "Closed";
+      setPc("Closed");
       setRemoteStreams([]);
       closePC();
 
@@ -206,7 +220,7 @@ function App() {
       socketRef.current.addEventListener("close", onClose);
 
       //Set websocket ref
-      webSocketRef.current = "Open";
+      setWs("Open");
 
     }
   }
@@ -223,7 +237,7 @@ function App() {
       socketRef.current?.close();
 
       //Update state
-      webSocketRef.current = "Closed";
+      setWs("Closed");
       setServerResponse('');
     }
   }
@@ -316,26 +330,26 @@ function App() {
         <div>
           <h1 style={{ margin: 0, fontSize: '1.2rem', letterSpacing: '1px', color: '#fff' }}>SYSTEM MONITOR</h1>
           <div style={{ display: 'flex', gap: '15px', marginTop: '5px' }}>
-            <StatusBadge label="WS" state={webSocketRef.current} />
-            <StatusBadge label="WebRTC" state={peerConnectionRef.current} />
+            <StatusBadge label="WS" state={wsState} />
+            <StatusBadge label="WebRTC" state={pcState} />
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
           {/* Toggle Button for Websocket */}
           <button 
-            onClick={webSocketRef.current === 'Closed' ? startWebsocket : closeWebsocket}
-            style={buttonStyle(webSocketRef.current === 'Closed' ? '#28a745' : '#dc3545')}
+            onClick={wsState === 'Closed' ? startWebsocket : closeWebsocket}
+            style={buttonStyle(wsState === 'Closed' ? '#28a745' : '#dc3545')}
           >
-            {webSocketRef.current === 'Closed' ? 'Connect Server' : 'Disconnect'}
+            {wsState === 'Closed' ? 'Connect Server' : 'Disconnect'}
           </button>
 
           {/* Toggle Button for PeerConnection */}
           <button 
-            onClick={peerConnectionRef.current === 'Closed' ? startPeerConnection : stopPeerConnection}
-            style={buttonStyle(peerConnectionRef.current === 'Closed' ? '#007bff' : '#f39c12')}
+            onClick={pcState === 'Closed' ? startPeerConnection : stopPeerConnection}
+            style={buttonStyle(pcState === 'Closed' ? '#007bff' : '#f39c12')}
           >
-            {peerConnectionRef.current === 'Closed' ? 'Start Feed' : 'Stop Feed'}
+            {pcState === 'Closed' ? 'Start Feed' : 'Stop Feed'}
           </button>
         </div>
       </header>

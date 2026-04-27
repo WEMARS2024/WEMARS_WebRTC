@@ -25,6 +25,7 @@ void PeerSession::peerSessionSetup() {
     // set peer connection configurations
     // as per https://libdatachannel.org/pages/reference.html
     rtc::Configuration config;
+    // STUN NECESSARY FOR NON-LOCAL TESTING
     //config.iceServers.emplace_back("stun:://google.com");
 
     pc_ = std::make_shared<rtc::PeerConnection>(config);

@@ -8,6 +8,8 @@ Encoder::Encoder(const int width, const int height, const int fps)
 
     logger_ = Logger::createLogger("encoder");
     logger_->info("Encoder Initialized");
+    
+    pts_counter_ = 0;
 
     init();
     initFrame();
@@ -100,8 +102,7 @@ void Encoder::fillFrame(const RawFrame& raw) {
 
     // use the actual raw frames time stamp
     //frame_->pts = raw.timestamp.time_since_epoch().count();
-    static int64_t pts_counter = 0;
-    frame_->pts = pts_counter++;
+    frame_->pts = pts_counter_++;
 
 }
 
@@ -129,7 +130,7 @@ std::vector<uint8_t> Encoder::encodeFrame(const std::shared_ptr<RawFrame>& raw) 
         logger_->error("Encoder has already completed the current frame");
         return {};
     } if (ret == AVERROR(EAGAIN)) {
-        logger_->error("Encoder requires more frames to output data, please try again");
+        logger_->warn("Encoder requires more frames to output data, please try again");
         return {};
     } else if (ret < 0) {
         return {};

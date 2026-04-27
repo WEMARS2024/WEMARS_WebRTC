@@ -1,9 +1,13 @@
+#include <csignal>
+#include <atomic>
+
 #include "signalling/PeerSession.hpp"
 #include "signalling/SignallingServer.hpp"
 #include "logging/logger.hpp"
 #include "camera/OakDLiteSource.hpp"
 #include "encoder/Encoder.hpp"
 
+std::atomic<bool> running = true;
 
 int main() {
 
@@ -11,6 +15,11 @@ int main() {
     auto logger_ = spdlog::stdout_color_mt("Main");
 
     logger_->info("=== Main Session Initiating ===");
+
+    // set thread properties
+
+    std::signal(SIGINT, [](int){ running = false; });
+    std::signal(SIGTERM, [](int){ running = false; });
 
     auto camera1 = OakDLiteSource("camera1");
     
@@ -31,7 +40,7 @@ int main() {
         std::shared_ptr<rtc::Track> track;
         std::shared_ptr<rtc::RtpPacketizationConfig> rtpConfig;
         
-        while (true) {
+        while (running) {
             if (track && track->isOpen()) {
                 auto frame = camera1.getFrame();
                 auto encodedFrame = encoder1.encodeFrame(frame);
