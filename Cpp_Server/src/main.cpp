@@ -21,8 +21,7 @@ int main() {
     logger_->info("frame height {}", initFrame->height);
     logger_->info("frame width {}", initFrame->width);
 
-
-    auto encoder1 = Encoder(initFrame->height, initFrame->width, 10);
+    auto encoder1 = Encoder(initFrame->width, initFrame->height, 10);
 
     auto peerSession = PeerSession::init(1);
     auto server = SignallingServer::init("0.0.0.0", 5000, peerSession);
@@ -33,9 +32,13 @@ int main() {
         std::shared_ptr<rtc::RtpPacketizationConfig> rtpConfig;
         
         while (true) {
-            if (track) {
+            if (track && track->isOpen()) {
                 auto frame = camera1.getFrame();
                 auto encodedFrame = encoder1.encodeFrame(frame);
+
+                if (encodedFrame.empty()) {
+                    continue;
+                }
 
                 rtpConfig->timestamp += 9000;
                 track->send(reinterpret_cast<const std::byte*>(encodedFrame.data()), encodedFrame.size());

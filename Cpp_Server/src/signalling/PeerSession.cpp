@@ -193,6 +193,7 @@ void PeerSession::closePC(){
         pc_->close();
     }
     trackMap_.clear();
+    rtpConfigMap_.clear();
     pc_ = nullptr;
 }
 

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <rtc/rtc.hpp>
 #include <variant>
 #include <nlohmann/json.hpp>

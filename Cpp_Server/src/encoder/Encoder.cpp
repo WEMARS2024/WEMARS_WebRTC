@@ -3,16 +3,14 @@
 
 #include <sstream>
 
-
-
 Encoder::Encoder(const int width, const int height, const int fps) 
         : width_(width), height_(height), fps_(fps) {
-    init();
-    initFrame();
 
     logger_ = Logger::createLogger("encoder");
     logger_->info("Encoder Initialized");
 
+    init();
+    initFrame();
 
 }
 
