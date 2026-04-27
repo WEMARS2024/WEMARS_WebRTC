@@ -3,4 +3,4 @@ WEMARS - second generation webRTC application, server built using c++ and testin
 
 # WebRTC Architecture:
 
-![Alt text](Cpp_Server/docs/WebRTC_Architcture_FlowChart.svg)
+![Alt text](Cpp_Server/docs/WebRTC_Architecture_FlowChart.svg)
