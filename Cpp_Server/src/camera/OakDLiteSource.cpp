@@ -3,8 +3,8 @@
 #include "camera/OakDLiteSource.hpp"
 #include "logging/logger.hpp"
 
-OakDLiteSource::OakDLiteSource(const std::string& id)
-    : id_(id) {
+OakDLiteSource::OakDLiteSource(const std::string& id, const int fps)
+    : id_(id), fps_(fps) {
 
         logger_ = Logger::createLogger(id_);
         logger_->info("{} initialized", id_);
@@ -29,8 +29,8 @@ void OakDLiteSource::start() {
     // set stream name here, this needs to be unique, consider
     // switching to `id_` when expanding from POC
     xout->setStreamName("video");
-    cam->setFps(10);
-    cam->setIspScale(1, 3); // SCALE DOWN IMAGE
+    cam->setFps(fps_);
+    cam->setIspScale(1, 3); //SCALE DOWN IMAGE
     cam->video.link(xout->input);
 
     device_ = std::make_unique<dai::Device>(pipeline_);

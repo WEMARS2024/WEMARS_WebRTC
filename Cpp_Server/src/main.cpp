@@ -21,7 +21,8 @@ int main() {
     std::signal(SIGINT, [](int){ running = false; });
     std::signal(SIGTERM, [](int){ running = false; });
 
-    auto camera1 = OakDLiteSource("camera1");
+    int fps = 30;
+    auto camera1 = OakDLiteSource("camera1", fps);
     
     camera1.start();
     auto initFrame = camera1.getFrame();
@@ -30,13 +31,13 @@ int main() {
     logger_->info("frame height {}", initFrame->height);
     logger_->info("frame width {}", initFrame->width);
 
-    auto encoder1 = Encoder(initFrame->width, initFrame->height, 10);
+    auto encoder1 = Encoder(initFrame->width, initFrame->height, fps);
 
     auto peerSession = PeerSession::init(1);
     auto server = SignallingServer::init("0.0.0.0", 5000, peerSession);
 
 
-    std::thread cameraThread([logger_, peerSession, &camera1, &encoder1]() {
+    std::thread cameraThread([logger_, peerSession, &camera1, &encoder1, fps]() {
         std::shared_ptr<rtc::Track> track;
         std::shared_ptr<rtc::RtpPacketizationConfig> rtpConfig;
         
@@ -49,7 +50,7 @@ int main() {
                     continue;
                 }
 
-                rtpConfig->timestamp += 9000;
+                rtpConfig->timestamp += 90000 / fps;
                 track->send(reinterpret_cast<const std::byte*>(encodedFrame.data()), encodedFrame.size());
             } else { 
                 track = peerSession->getTrack("Track1");

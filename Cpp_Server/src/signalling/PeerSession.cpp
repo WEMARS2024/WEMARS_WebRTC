@@ -99,14 +99,14 @@ void PeerSession::initTracks(){
         auto initDirection = rtc::Description::Direction::SendOnly;
 
         auto video = rtc::Description::Video(trackName, initDirection);
-        video.addH264Codec(96);
+        video.addH264Codec(96, "profile-level-id=420029;packetization-mode=1");
 
         uint32_t ssrc = 100 + i;
         std::string cName = "Camera" + std::to_string(i);
 
         auto rtpConfig = std::make_shared<rtc::RtpPacketizationConfig>(ssrc, cName, 96, 90000);
         auto rtpPacketizer = std::make_shared<rtc::H264RtpPacketizer>(
-            rtc::H264RtpPacketizer::Separator::LongStartSequence, 
+            rtc::H264RtpPacketizer::Separator::StartSequence, 
             rtpConfig,
             3000
         );

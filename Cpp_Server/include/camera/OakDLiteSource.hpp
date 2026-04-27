@@ -5,7 +5,7 @@
 
 class OakDLiteSource : public CameraSource {
 public:
-    OakDLiteSource(const std::string& id);
+    OakDLiteSource(const std::string& id, const int);
 
     void start() override;
     void stop() override;
@@ -14,6 +14,7 @@ public:
 
 private:
     std::string id_;
+    int fps_;
 
     //Depth AI Related Variables
     dai::Pipeline pipeline_;

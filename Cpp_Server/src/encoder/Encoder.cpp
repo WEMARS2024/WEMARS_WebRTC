@@ -37,8 +37,7 @@ bool Encoder::init() {
     }
 
     //Set encoder public options
-    ctx_->profile = FF_PROFILE_H264_CONSTRAINED_BASELINE;
-    ctx_->level = 31;
+    ctx_->level = 41;
     ctx_->width = width_;
     ctx_->height = height_;
     ctx_->framerate = {fps_, 1};
@@ -139,6 +138,8 @@ std::vector<uint8_t> Encoder::encodeFrame(const std::shared_ptr<RawFrame>& raw) 
     // copy the compressed data to a vector of uint8_t 
     compressedData.insert(compressedData.end(), pkt_->data, pkt_->data + pkt_->size);
 
+    /*
+    UNCOMMENT FOR DEBUGGING (PRINTS XCOMPRESSED PACKETS BYTES)
     std::stringstream ss;
     ss << std::hex << std::setfill('0');
     for (int i = 0; i < 5; ++i) {
@@ -146,6 +147,7 @@ std::vector<uint8_t> Encoder::encodeFrame(const std::shared_ptr<RawFrame>& raw) 
     }
 
     logger_->info("FULL PACKET ({} bytes): {}", pkt_->size, ss.str());
+    */
 
     // unload the AV packet & AV frame
     av_packet_unref(pkt_);
