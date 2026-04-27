@@ -1,0 +1,2 @@
+# WEMARS_WebRTC
+WEMARS - second generation webRTC application, server built using c++ and testing client built using react js.
