@@ -3,38 +3,39 @@ import { useState, useRef, useEffect } from 'react';
 function App() {
 
   // set global resources
-  const webSocketIp = "ws://127.0.0.1:5000"
+  const webSocketIp = "ws://127.0.0.1:5000";
   
   // set useState's
-  const [websocketState, setWebsocketState] = useState('Closed')
-  const [peerConnectionState, setPeerConnectionState] = useState('Closed')
   const [serverResponse, setServerResponse] = useState('')
   const [remoteStreams, setRemoteStreams] = useState([]);
 
   // set useRef's
-  const socketRef = useRef(null)
-  const pcRef = useRef(null)
+  const socketRef = useRef(null);
+  const pcRef = useRef(null);
+  const peerConnectionRef = useRef("Closed");
+  const webSocketRef = useRef("Closed");
 
 
   // === WEBSOCKET CALLBACKS === 
   const onOpen = (event) => {
     console.log("Opening WebSocket - Sending Greeting")
 
-    const msg = {text: "Greetings from react client!"}
+    const msg = {text: "Greetings from react client!"};
 
-    socketRef.current.send(JSON.stringify(msg))
+    socketRef.current.send(JSON.stringify(msg));
+
   }
 
   const onMessage = (event) => {
     console.log("Message Received: ", event.data)
     try{
-      const jsonObject = JSON.parse(event.data)
-      handleMessage(jsonObject)
+      const jsonObject = JSON.parse(event.data);
+      handleMessage(jsonObject);
     } catch (e) {
-      console.error("Message is not in JSON format")
+      console.log("Non JSON format: ", event.data)
     }
 
-    setServerResponse(event.data)
+    setServerResponse(event.data);
   }
 
   const onError = (event) => {
@@ -42,8 +43,8 @@ function App() {
   }
 
   const onClose = (event) => {
-    setServerResponse('')
-    setWebsocketState('Closed')
+    setServerResponse('');
+    webSocketRef.current = 'Closed';
   }
 
   // === PEER CONNECTION CALLBACKS === 
@@ -156,81 +157,80 @@ function App() {
   // === PEER CONNECTION START / STOP HANDLING ===
 
   const startPeerConnection = () => {
-    if ( peerConnectionState === 'Closed' ) {
+    if ( peerConnectionRef.current === 'Closed' ) {
       pcRef.current = new RTCPeerConnection();
 
-      pcRef.current.addEventListener("icecandidate", onICECandidate)
-      pcRef.current.addEventListener("track", onTrack)
+      pcRef.current.addEventListener("icecandidate", onICECandidate);
+      pcRef.current.addEventListener("track", onTrack);
 
       //for(let i=0; i<6; i++) {
       //  pcRef.current.addTransceiver('video', { direction: 'recvonly' });
       //}
 
-      setPeerConnectionState("Open")
-      initPC()
+      peerConnectionRef.current = "Open";
+      initPC();
 
     }
   }
 
   const stopPeerConnection = () => {
-    if ( peerConnectionState === 'Open') {
+    if ( peerConnectionRef.current === 'Open') {
       console.log("Closing Peer Connection")
 
       pcRef.current?.getReceivers().forEach(receiver => receiver.track?.stop());
 
       pcRef.current?.removeEventListener("icecandidate", onICECandidate);
       pcRef.current?.removeEventListener("track", onTrack);
-      pcRef.current?.close()
+      pcRef.current?.close();
       pcRef.current = null;
 
-
-      setPeerConnectionState("Closed")
+      peerConnectionRef.current = "Closed";
       setRemoteStreams([]);
-      closePC()
+      closePC();
+
     }
   }
 
   // === WEBSOCKET START / STOP HANDLING === 
 
   const startWebsocket = () => {
-    if ( websocketState === 'Closed' ) {
+    if ( webSocketRef.current === 'Closed' ) {
       console.log("Starting Websocket at: ", {webSocketIp})
       //Start Websocket
-      socketRef.current = new WebSocket(webSocketIp)
+      socketRef.current = new WebSocket(webSocketIp);
 
       //Add event listeners
-      socketRef.current.addEventListener("open", onOpen)
-      socketRef.current.addEventListener("message", onMessage)
-      socketRef.current.addEventListener("error", onError)
-      socketRef.current.addEventListener("close", onClose)
+      socketRef.current.addEventListener("open", onOpen);
+      socketRef.current.addEventListener("message", onMessage);
+      socketRef.current.addEventListener("error", onError);
+      socketRef.current.addEventListener("close", onClose);
 
-      //Set websocket state
-      setWebsocketState('Open')
+      //Set websocket ref
+      webSocketRef.current = "Open";
 
     }
   }
 
   const closeWebsocket = () => {
-    if ( websocketState === 'Open' ) {
+    if ( webSocketRef.current === 'Open' ) {
       //Log action
       console.log("Closing Websocket")
 
       //Remove listeners and close
       socketRef.current?.removeEventListener("open", onOpen);
       socketRef.current?.removeEventListener("message", onMessage);
-      socketRef.current?.removeEventListener("error", onError)
-      socketRef.current?.close()
+      socketRef.current?.removeEventListener("error", onError);
+      socketRef.current?.close();
 
       //Update state
-      setWebsocketState('Closed')
-      setServerResponse('')
+      webSocketRef.current = "Closed";
+      setServerResponse('');
     }
   }
 
   useEffect(() => {
     const handleTabClose = () => {
       console.log("Tab closing, cleaning up...");
-
 
       closeWebsocket();
       stopPeerConnection();
@@ -244,6 +244,7 @@ function App() {
     return () => {
       window.removeEventListener('beforeunload', handleTabClose);
       handleTabClose();
+
     };
   }, []); 
 
@@ -315,26 +316,26 @@ function App() {
         <div>
           <h1 style={{ margin: 0, fontSize: '1.2rem', letterSpacing: '1px', color: '#fff' }}>SYSTEM MONITOR</h1>
           <div style={{ display: 'flex', gap: '15px', marginTop: '5px' }}>
-            <StatusBadge label="WS" state={websocketState} />
-            <StatusBadge label="WebRTC" state={peerConnectionState} />
+            <StatusBadge label="WS" state={webSocketRef.current} />
+            <StatusBadge label="WebRTC" state={peerConnectionRef.current} />
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
           {/* Toggle Button for Websocket */}
           <button 
-            onClick={websocketState === 'Closed' ? startWebsocket : closeWebsocket}
-            style={buttonStyle(websocketState === 'Closed' ? '#28a745' : '#dc3545')}
+            onClick={webSocketRef.current === 'Closed' ? startWebsocket : closeWebsocket}
+            style={buttonStyle(webSocketRef.current === 'Closed' ? '#28a745' : '#dc3545')}
           >
-            {websocketState === 'Closed' ? 'Connect Server' : 'Disconnect'}
+            {webSocketRef.current === 'Closed' ? 'Connect Server' : 'Disconnect'}
           </button>
 
           {/* Toggle Button for PeerConnection */}
           <button 
-            onClick={peerConnectionState === 'Closed' ? startPeerConnection : stopPeerConnection}
-            style={buttonStyle(peerConnectionState === 'Closed' ? '#007bff' : '#f39c12')}
+            onClick={peerConnectionRef.current === 'Closed' ? startPeerConnection : stopPeerConnection}
+            style={buttonStyle(peerConnectionRef.current === 'Closed' ? '#007bff' : '#f39c12')}
           >
-            {peerConnectionState === 'Closed' ? 'Start Feed' : 'Stop Feed'}
+            {peerConnectionRef.current === 'Closed' ? 'Start Feed' : 'Stop Feed'}
           </button>
         </div>
       </header>
