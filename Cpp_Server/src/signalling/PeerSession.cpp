@@ -106,26 +106,24 @@ void PeerSession::initTracks(){
         auto rtpConfig = std::make_shared<rtc::RtpPacketizationConfig>(ssrc, cName, 96, 90000);
         auto rtpPacketizer = std::make_shared<rtc::H264RtpPacketizer>(
             rtc::H264RtpPacketizer::Separator::LongStartSequence, 
-            rtpConfig
+            rtpConfig,
+            3000
         );
 
-        // --- NEW: Add RTCP and Extensions ---
+        auto srReporter = std::make_shared<rtc::RtcpSrReporter>(rtpConfig);
+        rtpPacketizer->addToChain(srReporter);
+
         auto nackResponder = std::make_shared<rtc::RtcpNackResponder>();
         rtpPacketizer->addToChain(nackResponder);
         
-        // Helps Chrome map the incoming packets to the correct track
-        auto sdpHandler = std::make_shared<rtc::SdpExtensionHandler>(rtpConfig);
-        rtpPacketizer->addToChain(sdpHandler);
-
         auto track = pc_->addTrack(video);
-        
-        // --- CRITICAL: Explicitly set SSRC for the track ---
-        track->setSSRC(ssrc); 
-        
+
         track->setMediaHandler(rtpPacketizer);
         trackMap_[trackName] = track;
+        rtpConfigMap_[trackName] = rtpConfig;
     }
 }
+
 std::shared_ptr<rtc::Track> PeerSession::getTrack(const std::string& trackName){
 
     if (trackMap_.contains(trackName)){
@@ -135,6 +133,16 @@ std::shared_ptr<rtc::Track> PeerSession::getTrack(const std::string& trackName){
         return nullptr;
     }
     
+}
+
+std::shared_ptr<rtc::RtpPacketizationConfig> PeerSession::getRtpConfig(const std::string& trackName){
+
+    if (rtpConfigMap_.contains(trackName)){
+        return rtpConfigMap_[trackName];
+    } else{
+        logger_->info("Track does not exist");
+        return nullptr;
+    }
 }
 
 void PeerSession::initPC(){

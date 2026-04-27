@@ -4,6 +4,7 @@
 #include "camera/OakDLiteSource.hpp"
 #include "encoder/Encoder.hpp"
 
+
 int main() {
 
     Logger::init();
@@ -17,29 +18,30 @@ int main() {
     auto initFrame = camera1.getFrame();
     logger_->info("Initial Frame Captured");
 
-    auto encoder1 = Encoder(initFrame->height, initFrame->width, 30);
+    logger_->info("frame height {}", initFrame->height);
+    logger_->info("frame width {}", initFrame->width);
 
-    auto peerSession = PeerSession::init(6);
+
+    auto encoder1 = Encoder(initFrame->height, initFrame->width, 10);
+
+    auto peerSession = PeerSession::init(1);
     auto server = SignallingServer::init("0.0.0.0", 5000, peerSession);
 
 
     std::thread cameraThread([logger_, peerSession, &camera1, &encoder1]() {
         std::shared_ptr<rtc::Track> track;
+        std::shared_ptr<rtc::RtpPacketizationConfig> rtpConfig;
         
         while (true) {
             if (track) {
                 auto frame = camera1.getFrame();
                 auto encodedFrame = encoder1.encodeFrame(frame);
 
-                unsigned char* d = (unsigned char*)encodedFrame.data();
-                if (encodedFrame.size() >= 5) {
-                    printf("FIRST 5 BYTES: %02x %02x %02x %02x %02x\n", d[0], d[1], d[2], d[3], d[4]);
-                }
-                fflush(stdout);
-
+                rtpConfig->timestamp += 9000;
                 track->send(reinterpret_cast<const std::byte*>(encodedFrame.data()), encodedFrame.size());
             } else { 
                 track = peerSession->getTrack("Track1");
+                rtpConfig = peerSession->getRtpConfig("Track1");
                 std::this_thread::sleep_for(std::chrono::milliseconds(2000));
             }
         }

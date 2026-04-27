@@ -29,7 +29,8 @@ void OakDLiteSource::start() {
     // set stream name here, this needs to be unique, consider
     // switching to `id_` when expanding from POC
     xout->setStreamName("video");
-    cam->setFps(31);
+    cam->setFps(10);
+    cam->setIspScale(1, 3); // SCALE DOWN IMAGE
     cam->video.link(xout->input);
 
     device_ = std::make_unique<dai::Device>(pipeline_);

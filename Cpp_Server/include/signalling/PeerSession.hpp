@@ -25,6 +25,7 @@ public:
     void sendCandidates();
     void recieveCandidates(const nlohmann::json&);
     std::shared_ptr<rtc::Track> getTrack(const std::string&);
+    std::shared_ptr<rtc::RtpPacketizationConfig> getRtpConfig(const std::string&);
     void startTrack();
     void stopTrack();
     void closePC();
@@ -39,6 +40,7 @@ private:
     std::shared_ptr<spdlog::logger> logger_;
 
     std::map<std::string, std::shared_ptr<rtc::Track>> trackMap_;
+    std::map<std::string, std::shared_ptr<rtc::RtpPacketizationConfig>> rtpConfigMap_;
     std::shared_ptr<rtc::PeerConnection> pc_;
     messageSender sendMessage_;
 

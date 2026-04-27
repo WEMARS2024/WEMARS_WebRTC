@@ -1,6 +1,9 @@
 #include "encoder/Encoder.hpp"
 #include "logging/logger.hpp"
 
+#include <sstream>
+
+
 
 Encoder::Encoder(const int width, const int height, const int fps) 
         : width_(width), height_(height), fps_(fps) {
@@ -34,6 +37,8 @@ bool Encoder::init() {
     }
 
     //Set encoder public options
+    ctx_->profile = FF_PROFILE_H264_CONSTRAINED_BASELINE;
+    ctx_->level = 31;
     ctx_->width = width_;
     ctx_->height = height_;
     ctx_->framerate = {fps_, 1};
@@ -42,15 +47,18 @@ bool Encoder::init() {
     //Setting pix_fmt should be dynamic in future
     ctx_->pix_fmt = AV_PIX_FMT_NV12;
     ctx_->bit_rate = 2000000;
+    ctx_->rc_max_rate = 2200000;
+    ctx_->rc_buffer_size = 4000000; 
     
-    ctx_->gop_size = 30;
+    ctx_->gop_size = fps_;
     ctx_->max_b_frames = 0;
     ctx_->flags &= ~AV_CODEC_FLAG_GLOBAL_HEADER;
 
     // Set encoder private options
     av_opt_set(ctx_->priv_data, "preset", "ultrafast", 0);
     av_opt_set(ctx_->priv_data, "tune", "zerolatency", 0);
-    av_opt_set(ctx_->priv_data, "x264-params", "nal-hrd=cbr:force-cfr=1:repeat-headers=1", 0);
+    av_opt_set(ctx_->priv_data, "profile", "baseline", 0);
+    av_opt_set(ctx_->priv_data, "x264-params", "force-cfr=1:repeat-headers=1", 0);
 
     // Initialize & Start the encoder by passing the:
     // - AVCodecContext [actual encoder]
@@ -101,6 +109,8 @@ void Encoder::fillFrame(const RawFrame& raw) {
 
 std::vector<uint8_t> Encoder::encodeFrame(const std::shared_ptr<RawFrame>& raw) {
 
+    std::vector<uint8_t> compressedData;
+
     // fill the frame before sending to encoder
     // dereference raw before sending to fillFrame
     fillFrame(*raw);
@@ -115,17 +125,28 @@ std::vector<uint8_t> Encoder::encodeFrame(const std::shared_ptr<RawFrame>& raw) 
     ret = avcodec_receive_packet(ctx_, pkt_);
 
     // two return codes we are checking for EAGAIN (try again)
-    // and ERROR_EOF (what it means), need to add logic for 
-    // specific handling of these
-    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-        logger_->error("Encoder requires more frames, please try again");
+    // and ERROR_EOF (The encoder has been flushed/shut down)
+    // need to add logic for  specific handling of these
+    if (ret == AVERROR_EOF) {
+        logger_->error("Encoder has already completed the current frame");
+        return {};
+    } if (ret == AVERROR(EAGAIN)) {
+        logger_->error("Encoder requires more frames to output data, please try again");
         return {};
     } else if (ret < 0) {
         return {};
     }
 
     // copy the compressed data to a vector of uint8_t 
-    std::vector<uint8_t> compressedData(pkt_->data, pkt_->data + pkt_->size);
+    compressedData.insert(compressedData.end(), pkt_->data, pkt_->data + pkt_->size);
+
+    std::stringstream ss;
+    ss << std::hex << std::setfill('0');
+    for (int i = 0; i < 5; ++i) {
+        ss << std::setw(2) << static_cast<int>(pkt_->data[i]) << " ";
+    }
+
+    logger_->info("FULL PACKET ({} bytes): {}", pkt_->size, ss.str());
 
     // unload the AV packet & AV frame
     av_packet_unref(pkt_);
